@@ -2,7 +2,7 @@
   "students": [
     {
       "id": 1,
-      "firstName": "sayfiddin",
+      "firstName": "Sayfiddin",
       "lastName": "Mirkamolov",
       "group": "A"
     },
@@ -13,7 +13,20 @@
       "group": "B"
     }
   ],
-  "teachers": [],
+  "teachers": [
+    {
+      "id": 1,
+      "firstName": "Sayfiddin",
+      "lastName": "Mirkamolov",
+      "level": "Senior"
+    },
+    {
+      "id": 2,
+      "firstName": "Sabriddin",
+      "lastName": "Mirkamolov",
+      "level": "Middle"
+    }
+  ],
   "users": [
     {
       "id": "1",
@@ -21,8 +34,8 @@
       "password": "password"
     },
     {
-      "id": "623d",
-      "username": "admin",
+      "id": "2",
+      "username": "user",
       "password": "password"
     }
   ]

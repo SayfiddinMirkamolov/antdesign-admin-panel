@@ -1,47 +1,90 @@
+// src/Teachers.jsx
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Select, message } from 'antd';
-import axios from 'axios';
+import { Table, Button, Modal, Form, Input, Select, Space, Row, Col } from 'antd';
+import { fetchTeachers, createTeacher, updateTeacher, deleteTeacher } from './api';
 
 const { Option } = Select;
+const { Search } = Input;
 
 const Teachers = () => {
   const [teachers, setTeachers] = useState([]);
+  const [filteredTeachers, setFilteredTeachers] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentTeacher, setCurrentTeacher] = useState(null);
   const [form] = Form.useForm();
-  const [editingTeacher, setEditingTeacher] = useState(null);
+  const [searchText, setSearchText] = useState('');
+  const [selectedLevel, setSelectedLevel] = useState('');
 
   useEffect(() => {
-    fetchTeachers();
+    loadTeachers();
   }, []);
 
-  const fetchTeachers = async () => {
+  const loadTeachers = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/teachers');
+      const response = await fetchTeachers();
       setTeachers(response.data);
+      filterTeachers(searchText, selectedLevel);
     } catch (error) {
-      message.error('Failed to fetch teachers.');
+      console.error('Error fetching teachers:', error);
     }
   };
 
+  const filterTeachers = (search, level) => {
+    let filtered = teachers;
+
+    if (search) {
+      filtered = filtered.filter(teacher =>
+        teacher.firstName.toLowerCase().includes(search.toLowerCase()) ||
+        teacher.lastName.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    if (level) {
+      filtered = filtered.filter(teacher => teacher.level === level);
+    }
+
+    setFilteredTeachers(filtered);
+  };
+
   const handleAdd = () => {
+    setIsEditing(false);
+    setCurrentTeacher(null);
     form.resetFields();
-    setEditingTeacher(null);
     setIsModalVisible(true);
   };
 
   const handleEdit = (teacher) => {
-    setEditingTeacher(teacher);
+    setIsEditing(true);
+    setCurrentTeacher(teacher);
     form.setFieldsValue(teacher);
     setIsModalVisible(true);
   };
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:3000/teachers/${id}`);
-      message.success('Teacher deleted successfully.');
-      fetchTeachers();
+      await deleteTeacher(id);
+      setTeachers(teachers.filter(teacher => teacher.id !== id));
+      filterTeachers(searchText, selectedLevel);
     } catch (error) {
-      message.error('Failed to delete teacher.');
+      console.error('Error deleting teacher:', error);
+    }
+  };
+
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
+      if (isEditing && currentTeacher) {
+        await updateTeacher(currentTeacher.id, values);
+        setTeachers(teachers.map(teacher => teacher.id === currentTeacher.id ? values : teacher));
+      } else {
+        const response = await createTeacher(values);
+        setTeachers([...teachers, response.data]);
+      }
+      setIsModalVisible(false);
+      filterTeachers(searchText, selectedLevel);
+    } catch (error) {
+      console.error('Error saving teacher:', error);
     }
   };
 
@@ -49,21 +92,14 @@ const Teachers = () => {
     setIsModalVisible(false);
   };
 
-  const handleFinish = async (values) => {
-    try {
-      if (editingTeacher) {
-        await axios.put(`http://localhost:3000/teachers/${editingTeacher.id}`, values);
-        message.success('Teacher updated successfully.');
-      } else {
-        const newId = teachers.length ? teachers[teachers.length - 1].id + 1 : 1;
-        await axios.post('http://localhost:3000/teachers', { ...values, id: newId });
-        message.success('Teacher added successfully.');
-      }
-      setIsModalVisible(false);
-      fetchTeachers();
-    } catch (error) {
-      message.error('Failed to save teacher.');
-    }
+  const handleSearch = (value) => {
+    setSearchText(value);
+    filterTeachers(value, selectedLevel);
+  };
+
+  const handleFilterChange = (value) => {
+    setSelectedLevel(value);
+    filterTeachers(searchText, value);
   };
 
   const columns = [
@@ -74,26 +110,55 @@ const Teachers = () => {
     {
       title: 'Action',
       key: 'action',
-      render: (text, record) => (
-        <span>
-          <Button onClick={() => handleEdit(record)} style={{ marginRight: 8 }}>Edit</Button>
-          <Button onClick={() => handleDelete(record.id)} danger>Delete</Button>
-        </span>
+      render: (_, record) => (
+        <Space size="middle">
+          <Button onClick={() => handleEdit(record)}>Edit</Button>
+          <Button danger onClick={() => handleDelete(record.id)}>Delete</Button>
+        </Space>
       ),
     },
   ];
 
   return (
     <div>
-      <Button type="primary" onClick={handleAdd} style={{ marginBottom: 16 }}>Add Teacher</Button>
-      <Table columns={columns} dataSource={teachers} rowKey="id" />
+      <Row gutter={16}>
+        <Col span={8}>
+          <Search
+            placeholder="Search by name"
+            onSearch={handleSearch}
+            enterButton
+          />
+        </Col>
+        <Col span={8}>
+          <Select
+            placeholder="Select level"
+            style={{ width: '100%' }}
+            onChange={handleFilterChange}
+            allowClear
+          >
+            <Option value="">All Levels</Option>
+            <Option value="Senior">Senior</Option>
+            <Option value="Middle">Middle</Option>
+            <Option value="Junior">Junior</Option>
+          </Select>
+        </Col>
+        <Col span={8}>
+          <Button type="primary" onClick={handleAdd}>Add Teacher</Button>
+        </Col>
+      </Row>
+      <Table
+        dataSource={filteredTeachers}
+        columns={columns}
+        rowKey="id"
+        style={{ marginTop: 16 }}
+      />
       <Modal
-        title={editingTeacher ? 'Edit Teacher' : 'Add Teacher'}
+        title={isEditing ? 'Edit Teacher' : 'Add Teacher'}
         visible={isModalVisible}
+        onOk={handleOk}
         onCancel={handleCancel}
-        footer={null}
       >
-        <Form form={form} onFinish={handleFinish} layout="vertical">
+        <Form form={form} layout="vertical">
           <Form.Item name="firstName" label="First Name" rules={[{ required: true, message: 'Please input the first name!' }]}>
             <Input />
           </Form.Item>
@@ -106,9 +171,6 @@ const Teachers = () => {
               <Option value="Middle">Middle</Option>
               <Option value="Junior">Junior</Option>
             </Select>
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">{editingTeacher ? 'Update' : 'Add'}</Button>
           </Form.Item>
         </Form>
       </Modal>
