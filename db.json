@@ -1,5 +1,18 @@
 {
-  "students": [],
+  "students": [
+    {
+      "id": 1,
+      "firstName": "sayfiddin",
+      "lastName": "Mirkamolov",
+      "group": "A"
+    },
+    {
+      "id": 2,
+      "firstName": "Sabriddin",
+      "lastName": "Mirkamolov",
+      "group": "B"
+    }
+  ],
   "teachers": [],
   "users": [
     {
