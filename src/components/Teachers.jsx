@@ -1,6 +1,5 @@
-// src/Teachers.jsx
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Space, Row, Col } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, Space, Row, Col, message } from 'antd';
 import { fetchTeachers, createTeacher, updateTeacher, deleteTeacher } from './api';
 
 const { Option } = Select;
@@ -24,7 +23,7 @@ const Teachers = () => {
     try {
       const response = await fetchTeachers();
       setTeachers(response.data);
-      filterTeachers(searchText, selectedLevel);
+      setFilteredTeachers(response.data);  // Filterlash uchun boshlang'ich holat
     } catch (error) {
       console.error('Error fetching teachers:', error);
     }
@@ -65,9 +64,11 @@ const Teachers = () => {
     try {
       await deleteTeacher(id);
       setTeachers(teachers.filter(teacher => teacher.id !== id));
-      filterTeachers(searchText, selectedLevel);
+      setFilteredTeachers(filteredTeachers.filter(teacher => teacher.id !== id));  // Filtrlangan holatni yangilash
+      message.success('Teacher deleted successfully');
     } catch (error) {
       console.error('Error deleting teacher:', error);
+      message.error('Failed to delete teacher');
     }
   };
 
@@ -76,15 +77,18 @@ const Teachers = () => {
       const values = await form.validateFields();
       if (isEditing && currentTeacher) {
         await updateTeacher(currentTeacher.id, values);
-        setTeachers(teachers.map(teacher => teacher.id === currentTeacher.id ? values : teacher));
+        setTeachers(teachers.map(teacher => teacher.id === currentTeacher.id ? { ...values, id: currentTeacher.id } : teacher));
+        message.success('Teacher updated successfully');
       } else {
         const response = await createTeacher(values);
         setTeachers([...teachers, response.data]);
+        message.success('Teacher added successfully');
       }
       setIsModalVisible(false);
-      filterTeachers(searchText, selectedLevel);
+      filterTeachers(searchText, selectedLevel);  // Filtrlashni qayta qo'llash
     } catch (error) {
       console.error('Error saving teacher:', error);
+      message.error('Failed to save teacher');
     }
   };
 

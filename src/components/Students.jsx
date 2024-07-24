@@ -1,6 +1,5 @@
-// src/Students.jsx
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Space, Row, Col } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, Space, Row, Col, message } from 'antd';
 import { fetchStudents, createStudent, updateStudent, deleteStudent } from './api';
 
 const { Option } = Select;
@@ -24,7 +23,7 @@ const Students = () => {
     try {
       const response = await fetchStudents();
       setStudents(response.data);
-      filterStudents(searchText, selectedGroup);
+      setFilteredStudents(response.data);  // Filterlash uchun boshlang'ich holat
     } catch (error) {
       console.error('Error fetching students:', error);
     }
@@ -65,9 +64,11 @@ const Students = () => {
     try {
       await deleteStudent(id);
       setStudents(students.filter(student => student.id !== id));
-      filterStudents(searchText, selectedGroup);
+      setFilteredStudents(filteredStudents.filter(student => student.id !== id));  // Filtrlangan holatni yangilash
+      message.success('Student deleted successfully');
     } catch (error) {
       console.error('Error deleting student:', error);
+      message.error('Failed to delete student');
     }
   };
 
@@ -76,15 +77,18 @@ const Students = () => {
       const values = await form.validateFields();
       if (isEditing && currentStudent) {
         await updateStudent(currentStudent.id, values);
-        setStudents(students.map(student => student.id === currentStudent.id ? values : student));
+        setStudents(students.map(student => student.id === currentStudent.id ? { ...values, id: currentStudent.id } : student));
+        message.success('Student updated successfully');
       } else {
         const response = await createStudent(values);
         setStudents([...students, response.data]);
+        message.success('Student added successfully');
       }
       setIsModalVisible(false);
-      filterStudents(searchText, selectedGroup);
+      filterStudents(searchText, selectedGroup);  // Filtrlashni qayta qo'llash
     } catch (error) {
       console.error('Error saving student:', error);
+      message.error('Failed to save student');
     }
   };
 

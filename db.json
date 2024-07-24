@@ -1,29 +1,35 @@
 {
   "students": [
     {
-      "id": 1,
       "firstName": "Sayfiddin",
       "lastName": "Mirkamolov",
-      "group": "A"
+      "group": "B",
+      "id": "1"
     },
     {
-      "id": 2,
-      "firstName": "Sabriddin",
-      "lastName": "Mirkamolov",
+      "id": "0819",
+      "firstName": "Azizbek",
+      "lastName": "Azimov",
       "group": "B"
+    },
+    {
+      "firstName": "John",
+      "lastName": "Doe",
+      "group": "A",
+      "id": "5e6c"
     }
   ],
   "teachers": [
     {
-      "id": 1,
+      "id": "1",
       "firstName": "Sayfiddin",
       "lastName": "Mirkamolov",
       "level": "Senior"
     },
     {
-      "id": 2,
-      "firstName": "Sabriddin",
-      "lastName": "Mirkamolov",
+      "id": "be8d",
+      "firstName": "Azizbek",
+      "lastName": "Azimov",
       "level": "Middle"
     }
   ],
