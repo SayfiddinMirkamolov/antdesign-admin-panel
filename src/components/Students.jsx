@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Space, Row, Col, message } from 'antd';
+import { Table, Button, Modal, Select, Space, Row, Col, Input, message } from 'antd';
+import { useForm } from 'react-hook-form';
 import { fetchStudents, createStudent, updateStudent, deleteStudent } from './api';
 
 const { Option } = Select;
@@ -11,9 +12,10 @@ const Students = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentStudent, setCurrentStudent] = useState(null);
-  const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
+
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm();
 
   useEffect(() => {
     loadStudents();
@@ -49,14 +51,16 @@ const Students = () => {
   const handleAdd = () => {
     setIsEditing(false);
     setCurrentStudent(null);
-    form.resetFields();
+    reset();
     setIsModalVisible(true);
   };
 
   const handleEdit = (student) => {
     setIsEditing(true);
     setCurrentStudent(student);
-    form.setFieldsValue(student);
+    setValue('firstName', student.firstName);
+    setValue('lastName', student.lastName);
+    setValue('group', student.group);
     setIsModalVisible(true);
   };
 
@@ -72,15 +76,14 @@ const Students = () => {
     }
   };
 
-  const handleOk = async () => {
+  const onSubmit = async (data) => {
     try {
-      const values = await form.validateFields();
       if (isEditing && currentStudent) {
-        await updateStudent(currentStudent.id, values);
-        setStudents(students.map(student => student.id === currentStudent.id ? { ...values, id: currentStudent.id } : student));
+        await updateStudent(currentStudent.id, data);
+        setStudents(students.map(student => student.id === currentStudent.id ? { ...data, id: currentStudent.id } : student));
         message.success('Student updated successfully');
       } else {
-        const response = await createStudent(values);
+        const response = await createStudent(data);
         setStudents([...students, response.data]);
         message.success('Student added successfully');
       }
@@ -158,23 +161,29 @@ const Students = () => {
       <Modal
         title={isEditing ? 'Edit Student' : 'Add Student'}
         visible={isModalVisible}
-        onOk={handleOk}
+        onOk={handleSubmit(onSubmit)}
         onCancel={handleCancel}
       >
-        <Form form={form} layout="vertical">
-          <Form.Item name="firstName" label="First Name" rules={[{ required: true, message: 'Please input the first name!' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="lastName" label="Last Name" rules={[{ required: true, message: 'Please input the last name!' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="group" label="Group" rules={[{ required: true, message: 'Please select a group!' }]}>
-            <Select>
-              <Option value="A">Group A</Option>
-              <Option value="B">Group B</Option>
-            </Select>
-          </Form.Item>
-        </Form>
+        <form>
+          <div>
+            <label>First Name</label>
+            <input {...register('firstName', { required: 'First name is required' })} />
+            {errors.firstName && <p>{errors.firstName.message}</p>}
+          </div>
+          <div>
+            <label>Last Name</label>
+            <input {...register('lastName', { required: 'Last name is required' })} />
+            {errors.lastName && <p>{errors.lastName.message}</p>}
+          </div>
+          <div>
+            <label>Group</label>
+            <select {...register('group', { required: 'Group is required' })}>
+              <option value="A">Group A</option>
+              <option value="B">Group B</option>
+            </select>
+            {errors.group && <p>{errors.group.message}</p>}
+          </div>
+        </form>
       </Modal>
     </div>
   );

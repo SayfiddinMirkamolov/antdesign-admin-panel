@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Space, Row, Col, message } from 'antd';
+import { Table, Button, Modal, Select, Space, Row, Col, Input, message } from 'antd';
+import { useForm } from 'react-hook-form';
 import { fetchTeachers, createTeacher, updateTeacher, deleteTeacher } from './api';
 
 const { Option } = Select;
@@ -11,9 +12,10 @@ const Teachers = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentTeacher, setCurrentTeacher] = useState(null);
-  const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
   const [selectedLevel, setSelectedLevel] = useState('');
+
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm();
 
   useEffect(() => {
     loadTeachers();
@@ -49,14 +51,16 @@ const Teachers = () => {
   const handleAdd = () => {
     setIsEditing(false);
     setCurrentTeacher(null);
-    form.resetFields();
+    reset();
     setIsModalVisible(true);
   };
 
   const handleEdit = (teacher) => {
     setIsEditing(true);
     setCurrentTeacher(teacher);
-    form.setFieldsValue(teacher);
+    setValue('firstName', teacher.firstName);
+    setValue('lastName', teacher.lastName);
+    setValue('level', teacher.level);
     setIsModalVisible(true);
   };
 
@@ -72,15 +76,14 @@ const Teachers = () => {
     }
   };
 
-  const handleOk = async () => {
+  const onSubmit = async (data) => {
     try {
-      const values = await form.validateFields();
       if (isEditing && currentTeacher) {
-        await updateTeacher(currentTeacher.id, values);
-        setTeachers(teachers.map(teacher => teacher.id === currentTeacher.id ? { ...values, id: currentTeacher.id } : teacher));
+        await updateTeacher(currentTeacher.id, data);
+        setTeachers(teachers.map(teacher => teacher.id === currentTeacher.id ? { ...data, id: currentTeacher.id } : teacher));
         message.success('Teacher updated successfully');
       } else {
-        const response = await createTeacher(values);
+        const response = await createTeacher(data);
         setTeachers([...teachers, response.data]);
         message.success('Teacher added successfully');
       }
@@ -159,24 +162,30 @@ const Teachers = () => {
       <Modal
         title={isEditing ? 'Edit Teacher' : 'Add Teacher'}
         visible={isModalVisible}
-        onOk={handleOk}
+        onOk={handleSubmit(onSubmit)}
         onCancel={handleCancel}
       >
-        <Form form={form} layout="vertical">
-          <Form.Item name="firstName" label="First Name" rules={[{ required: true, message: 'Please input the first name!' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="lastName" label="Last Name" rules={[{ required: true, message: 'Please input the last name!' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="level" label="Level" rules={[{ required: true, message: 'Please select a level!' }]}>
-            <Select>
-              <Option value="Senior">Senior</Option>
-              <Option value="Middle">Middle</Option>
-              <Option value="Junior">Junior</Option>
-            </Select>
-          </Form.Item>
-        </Form>
+        <form>
+          <div>
+            <label>First Name</label>
+            <input {...register('firstName', { required: 'First name is required' })} />
+            {errors.firstName && <p>{errors.firstName.message}</p>}
+          </div>
+          <div>
+            <label>Last Name</label>
+            <input {...register('lastName', { required: 'Last name is required' })} />
+            {errors.lastName && <p>{errors.lastName.message}</p>}
+          </div>
+          <div>
+            <label>Level</label>
+            <select {...register('level', { required: 'Level is required' })}>
+              <option value="Senior">Senior</option>
+              <option value="Middle">Middle</option>
+              <option value="Junior">Junior</option>
+            </select>
+            {errors.level && <p>{errors.level.message}</p>}
+          </div>
+        </form>
       </Modal>
     </div>
   );
